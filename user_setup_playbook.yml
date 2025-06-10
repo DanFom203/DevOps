@@ -4,7 +4,7 @@
   become: true
   vars:
     username: devuser
-    ssh_pub_key: "{{ lookup('file', 'id_ed25519.pub') }}"
+    ssh_pub_key: "{{ lookup('file', '/root/.ssh/id_ed25519.pub') }}"
 
   tasks:
     - name: Create a new user
