@@ -1,0 +1,4 @@
+---
+users:
+  - name: devuser
+    pub_key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILAHK7Ke1/Jzn7AyySLvluktKVhzyd2ucXgyM93uLSCp root@OS-Ubuntu-2"

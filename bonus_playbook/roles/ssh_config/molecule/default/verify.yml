@@ -1,0 +1,22 @@
+---
+- name: Verify ssh_config role
+  hosts: all
+  tasks:
+    - name: Ensure PasswordAuthentication is disabled
+      command: grep '^PasswordAuthentication no' /etc/ssh/sshd_config
+      register: password_auth
+      changed_when: false
+      failed_when: password_auth.rc != 0
+
+    - name: Ensure PubkeyAuthentication is enabled
+      command: grep '^PubkeyAuthentication yes' /etc/ssh/sshd_config
+      register: pubkey_auth
+      changed_when: false
+      failed_when: pubkey_auth.rc != 0
+
+    - name: Check if port 22 is listening (sshd running)
+      shell: netstat -tlnp | grep ':22'
+      register: sshd_running
+      changed_when: false
+      failed_when: sshd_running.rc != 0
+

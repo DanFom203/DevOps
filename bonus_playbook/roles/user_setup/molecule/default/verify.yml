@@ -1,0 +1,80 @@
+---
+- name: Verify user_setup role
+  hosts: all
+  become: true
+
+  tasks:
+    - name: Load user variables from group_vars
+      include_vars:
+        file: "{{ playbook_dir }}/../../../../group_vars/all.yml"
+
+    - name: Check users exist
+      command: id {{ item.name }}
+      register: id_check
+      changed_when: false
+      failed_when: id_check.rc != 0
+      loop: "{{ users }}"
+      loop_control:
+        label: "Check user {{ item.name }} exists"
+
+    - name: Check if user is in sudo group
+      command: groups {{ item.name }}
+      register: groups_check
+      loop: "{{ users }}"
+
+    - name: Assert user is in sudo group
+      assert:
+        that:
+          - "'sudo' in item.stdout"
+        fail_msg: "{{ item.item.name }} is not in sudo group"
+        success_msg: "{{ item.item.name }} is in sudo group"
+      loop: "{{ groups_check.results }}"
+
+    - name: Stat .ssh directory
+      stat:
+        path: "/home/{{ item.name }}/.ssh"
+      register: ssh_stat
+      loop: "{{ users }}"
+
+    - name: Assert .ssh directory exists and is correct
+      assert:
+        that:
+          - ssh_stat.results[loop_index].stat.exists
+          - ssh_stat.results[loop_index].stat.isdir
+          - ssh_stat.results[loop_index].stat.mode == '0700'
+      loop: "{{ users }}"
+      loop_control:
+        index_var: loop_index
+
+    - name: Check authorized_keys exists and is not empty
+      stat:
+        path: "/home/{{ item.name }}/.ssh/authorized_keys"
+      register: key_stat
+      loop: "{{ users }}"
+
+    - name: Assert authorized_keys exists and valid
+      assert:
+        that:
+          - key_stat.results[loop_index].stat.exists
+          - key_stat.results[loop_index].stat.size > 0
+          - key_stat.results[loop_index].stat.mode == '0600'
+      loop: "{{ users }}"
+      loop_control:
+        index_var: loop_index
+
+    - name: Check /opt/{{ item.name }} dir exists with mode 0660
+      stat:
+        path: "/opt/{{ item.name }}"
+      register: opt_stat
+      loop: "{{ users }}"
+
+    - name: Assert /opt/{{ item.name }} dir exists and correct
+      assert:
+        that:
+          - opt_stat.results[loop_index].stat.exists
+          - opt_stat.results[loop_index].stat.isdir
+          - opt_stat.results[loop_index].stat.mode == '0660'
+      loop: "{{ users }}"
+      loop_control:
+        index_var: loop_index
+

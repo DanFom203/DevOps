@@ -1,0 +1,32 @@
+---
+dependency:
+  name: galaxy
+
+driver:
+  name: docker
+
+platforms:
+  - name: instance
+    image: lscr.io/linuxserver/openssh-server:latest
+    user: root
+    command: ""
+    pre_build_image: true
+    privileged: true
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+    override_command: false
+
+provisioner:
+  name: ansible
+  playbooks:
+    prepare: prepare.yml
+  log: true
+  config_options:
+    defaults:
+      remote_tmp: /tmp/.ansible/tmp
+      interpreter_python: auto
+    ssh_connection:
+      pipelining: true
+
+verifier:
+  name: ansible

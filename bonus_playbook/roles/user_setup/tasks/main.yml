@@ -1,0 +1,44 @@
+#SPDX-License-Identifier: MIT-0
+---
+# tasks file for roles/user_setup
+- name: Create users
+  user:
+    name: "{{ item.name }}"
+    shell: /bin/bash
+    state: present
+    create_home: yes
+  loop: "{{ users }}"
+
+- name: Add users to sudo group
+  user:
+    name: "{{ item.name }}"
+    groups: sudo
+    append: yes
+  loop: "{{ users }}"
+
+- name: Create .ssh directories
+  file:
+    path: "/home/{{ item.name }}/.ssh"
+    state: directory
+    mode: '0700'
+    owner: "{{ item.name }}"
+    group: "{{ item.name }}"
+  loop: "{{ users }}"
+
+- name: Add public SSH keys
+  copy:
+    content: "{{ item.pub_key }}"
+    dest: "/home/{{ item.name }}/.ssh/authorized_keys"
+    owner: "{{ item.name }}"
+    group: "{{ item.name }}"
+    mode: '0600'
+  loop: "{{ users }}"
+
+- name: Create a directory in /opt
+  file:
+    path: "/opt/{{ item.name }}"
+    state: directory
+    owner: "{{ item.name }}"
+    group: "{{ item.name }}"
+    mode: '0660'
+  loop: "{{ users }}"

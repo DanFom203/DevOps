@@ -1,0 +1,40 @@
+# SPDX-License-Identifier: MIT-0
+---
+# tasks file for roles/ssh_config
+
+- name: Ensure /etc/ssh/sshd_config exists
+  ansible.builtin.stat:
+    path: /etc/ssh/sshd_config
+  register: sshd_config
+
+- name: Fail if sshd_config is missing
+  ansible.builtin.fail:
+    msg: "/etc/ssh/sshd_config is missing"
+  when: not sshd_config.stat.exists
+
+- name: Disable password authentication
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^#?PasswordAuthentication'
+    line: 'PasswordAuthentication no'
+    state: present
+    backrefs: yes
+
+- name: Enable pubkey authentication
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^#?PubkeyAuthentication'
+    line: 'PubkeyAuthentication yes'
+    state: present
+    backrefs: yes
+
+- name: Kill sshd process if running
+  ansible.builtin.shell: "pgrep -x sshd && killall sshd || true"
+  ignore_errors: true
+  changed_when: false
+
+- name: Start sshd manually
+  ansible.builtin.shell: "/usr/sbin/sshd -D &"
+  async: 5
+  poll: 0
+  changed_when: false
